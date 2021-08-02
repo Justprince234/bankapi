@@ -14,6 +14,7 @@ pillow = "*"
 cryptography = "*"
 boto3 = "*"
 django-rest-knox = "*"
+gunicorn = "*"
 
 [dev-packages]
 
