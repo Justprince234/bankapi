@@ -1,0 +1,1 @@
+web: gunicorn deunionreserve.wsgi --log-file -
