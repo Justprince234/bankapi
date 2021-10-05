@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
+from  django.conf import settings
 
 import random
 import uuid
@@ -98,7 +99,7 @@ class UpdateUser(models.Model):
     relationship_nok = models.CharField(max_length=50)
     phone_nok = models.CharField(max_length=50)
     date_updated = models.DateTimeField(auto_now_add=True)
-    user_id = models.OneToOneField(User, on_delete=models.CASCADE)
+    user_id = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name_plural = "User Data"
@@ -116,7 +117,7 @@ class History(models.Model):
     transaction_description = models.CharField(max_length=100, null=True, blank=True)
     transaction_date = models.DateField()
     transaction_id = models.CharField(default=transaction_id, unique=True, max_length=200)
-    user_id = models.ForeignKey(User, related_name='histories', on_delete=models.CASCADE)
+    user_id = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='histories', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name_plural = 'Transaction History'
@@ -129,7 +130,7 @@ class PendingTransfer(models.Model):
     customer_name = models.CharField(max_length=100)
     transfer_amount = models.DecimalField(default=0, max_digits=12, decimal_places=2, null=True, blank=True)
     transfer_date = models.DateField()
-    user_id = models.ForeignKey(User, related_name='pendingtransfers', on_delete=models.CASCADE)
+    user_id = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='pendingtransfers', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name_plural = 'Pending Transfers'

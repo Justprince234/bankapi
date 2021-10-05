@@ -12,7 +12,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 
-from django.contrib.auth import login
+from django.shortcuts import render,HttpResponseRedirect,Http404
+from rest_framework.parsers import JSONParser
+from django.http import HttpResponse,JsonResponse
+from rest_framework.decorators import api_view
+from django.contrib.auth.decorators import login_required
+
 
 from rest_framework import permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
@@ -103,25 +108,30 @@ class UserAPI(generics.RetrieveAPIView):
         return self.request.user
 
 # Get History API
-class HistoryAPI(LoginRequiredMixin, generics.ListAPIView):
-    Model = History
-    serializer_class = HistorySerializer
-
-    def get_queryset(self):
-        user = get_object_or_404(User, email=self.kwargs.get('email'))
-        queryset = History.objects.filter(user_id=user)
-        return queryset.order_by('-transaction_date')
-
+@login_required
+@api_view(['GET'])
+def history_api_view(request,pk):
+    try: 
+        item = History.objects.get(id = pk)
+    except History.DoesNotExist:
+        raise Http404('Not found')
+ 
+    if request.method == 'GET':
+        serializer = HistorySerializer(item)
+        return JsonResponse(serializer.data)
 
 # Get PendingTransfer API
-class PendingTransferAPI(LoginRequiredMixin, generics.ListAPIView):
-    serializer_class = PendingTransferSerializer
-
-    def get_queryset(self):
-        user = get_object_or_404(User, email=self.kwargs.get('email'))
-        queryset = PendingTransfer.objects.filter(user_id=user)
-        return queryset.order_by('-transfer_date')
-
+@login_required
+@api_view(['GET'])
+def pendingtransfers_api_view(request,pk):
+    try: 
+        item = PendingTransfer.objects.get(id = pk)
+    except History.DoesNotExist:
+        raise Http404('Not found')
+ 
+    if request.method == 'GET':
+        serializer = PendingTransferSerializer(item)
+        return JsonResponse(serializer.data)
 
 class ChangePasswordView(generics.UpdateAPIView):
     """
@@ -157,18 +167,36 @@ class ChangePasswordView(generics.UpdateAPIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class UserDataList(generics.ListCreateAPIView):
-    queryset = UpdateUser.objects.all()
-    serializer_class = UpdateUserSerializer
+@login_required
+@api_view(['GET','POST'])
+def UserDataLists_api_view(request):
+    
+    if request.method == 'GET':
+        items = UpdateUser.objects.all()
+        serializer = UpdateUserSerializer(items, many =True)
+        return JsonResponse(serializer.data, safe =False)
+    
+    elif request.method == 'POST':
 
-class UserDataAuth(LoginRequiredMixin, generics.ListAPIView):
-    queryset = UpdateUser.objects.all()
-    serializer_class = UpdateUserSerializer
+        data = JSONParser().parse(request)
+        serializer =UpdateUserSerializer(data = data)
+ 
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data,status =201)
+        return JsonResponse(serializer.errors,status = 400)
 
-    def get_queryset(self):
-        user = get_object_or_404(User, email=self.kwargs.get('email'))
-        queryset = UpdateUser.objects.filter(user_id=user)
-        return queryset.order_by('-date_updated')
+@login_required
+@api_view(['GET'])
+def UserDataList_api_view(request,pk):
+    try: 
+        item = UpdateUser.objects.get(id = pk)
+    except History.DoesNotExist:
+        raise Http404('Not found')
+ 
+    if request.method == 'GET':
+        serializer = UpdateUserSerializer(item)
+        return JsonResponse(serializer.data)
 
 # class RequestPasswordResetEmail(generics.GenericAPIView):
 #     serializer_class = RequestPasswordResetEmailSerializer

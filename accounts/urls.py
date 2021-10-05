@@ -1,7 +1,8 @@
 from django.urls import path
 
 from knox import views as knox_views
-from .views import RegisterAPI, LoginAPIView, UserAPI, UserDataList, UserDataAuth, HistoryAPI, PendingTransferAPI
+from . import views
+from .views import RegisterAPI, LoginAPIView, UserAPI
 
 urlpatterns = [
     # path('api/request-reset-email/', RequestPasswordResetEmail.as_view(), name='request-reset-email'),
@@ -13,9 +14,9 @@ urlpatterns = [
     path('api/logout/', knox_views.LogoutView.as_view(), name='logout'),
     path('api/logoutall/', knox_views.LogoutAllView.as_view(), name='logoutall'),
     path('api/user/', UserAPI.as_view(), name='user'),
-    path('api/history/<str:email>/', HistoryAPI.as_view(), name='history'),
-    path('api/pendingtransfer/<str:email>/', PendingTransferAPI.as_view(), name='pending-transfer'),
+    path('historyview/<int:pk>/', views.history_api_view, name='historyview'),
+    path('pendingtransfer/<int:pk>/', views.pendingtransfers_api_view, name='pendingtransfer'),
+    path('userdatas/', views.UserDataLists_api_view, name='userdatas'),
+    path('userdata/<int:pk>/', views.UserDataList_api_view, name='userdata'),
     # path('api/change-password/', ChangePasswordView.as_view(), name='change-password'),
-    path('api/updateuser/', UserDataList.as_view()),
-    path('api/userdataauth/<str:email>/', UserDataAuth.as_view()),
 ]
