@@ -11,8 +11,14 @@ def transaction_id():
     return str(uuid.uuid1())
 
 TRANSACTION_TYPE = (
-    ('Withdraw', 'Withdrawal'),
-    ('Deposit', 'Deposit'),
+    ('Credit', 'Credit'),
+    ('Debit', 'Debit'),
+)
+
+TRANSACTION_STATUS = (
+    ('Pending','Pending'),
+    ('Successful','Successful'),
+    ('Declined', 'Declined')
 )
 
 SEX = (
@@ -99,41 +105,27 @@ class UpdateUser(models.Model):
     relationship_nok = models.CharField(max_length=50)
     phone_nok = models.CharField(max_length=50)
     date_updated = models.DateTimeField(auto_now_add=True)
-    user_id = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='owner', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name_plural = "User Data"
   
     def __str__(self):
-        return "{}".format(self.user_id)
+        return "{}".format(self.owner)
 
 class History(models.Model):
     """Users transactions history table"""
-
-    bank_name = models.CharField(max_length=100)
-    customer_name = models.CharField(max_length=100)
-    transaction_type = models.CharField(choices=TRANSACTION_TYPE, default='Deposit', max_length=11, null=True, blank=True)
+    to_account = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='receive', on_delete=models.CASCADE)
+    transaction_type = models.CharField(choices=TRANSACTION_TYPE, default='Credit', max_length=11, null=True, blank=True)
     transaction_amount = models.DecimalField(default=0, max_digits=12, decimal_places=2, null=True, blank=True)
     transaction_description = models.CharField(max_length=100, null=True, blank=True)
     transaction_date = models.DateField()
-    transaction_id = models.CharField(default=transaction_id, unique=True, max_length=200)
-    user_id = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='histories', on_delete=models.CASCADE)
+    transaction_id = models.UUIDField(unique=True, editable=False, default=uuid.uuid4)
+    status = models.CharField(choices=TRANSACTION_STATUS, default='Successful', max_length=20)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='owners', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name_plural = 'Transaction History'
 
     def __str__(self):
-        return "{} of {} has been made, account name {}".format(self.transaction_type, self.transaction_amount, self.customer_name)
-
-class PendingTransfer(models.Model):
-    """User pending transactions table"""
-    customer_name = models.CharField(max_length=100)
-    transfer_amount = models.DecimalField(default=0, max_digits=12, decimal_places=2, null=True, blank=True)
-    transfer_date = models.DateField()
-    user_id = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='pendingtransfers', on_delete=models.CASCADE)
-
-    class Meta:
-        verbose_name_plural = 'Pending Transfers'
-
-    def __str__(self):
-        return "The sum of {} has been made to you by {}".format(self.transfer_amount, self.customer_name)
+        return "{} of {} has been made, account name {}".format(self.transaction_type, self.transaction_amount, self.to_account)

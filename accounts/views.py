@@ -5,9 +5,9 @@ from rest_framework import generics, permissions
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
 from knox.models import AuthToken
-from .serializers import UserSerializer, RegisterSerializer, UpdateUserSerializer, LoginSerializer, ChangePasswordSerializer, HistorySerializer, PendingTransferSerializer
+from .serializers import UserSerializer, RegisterSerializer, UpdateUserSerializer, LoginSerializer, ChangePasswordSerializer, HistorySerializer
 from rest_framework.permissions import IsAuthenticated
-from .models import UpdateUser, User, History, PendingTransfer
+from .models import UpdateUser, User, History
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
@@ -25,6 +25,7 @@ from knox.views import LoginView as KnoxLoginView
 from django.conf import settings
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.decorators import api_view, permission_classes
 
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
@@ -107,96 +108,78 @@ class UserAPI(generics.RetrieveAPIView):
     def get_object(self):
         return self.request.user
 
-# Get History API
-@login_required
-@api_view(['GET'])
-def history_api_view(request,pk):
-    try: 
-        item = History.objects.get(id = pk)
-    except History.DoesNotExist:
-        raise Http404('Not found')
- 
-    if request.method == 'GET':
-        serializer = HistorySerializer(item)
-        return JsonResponse(serializer.data)
-
-# Get PendingTransfer API
-@login_required
-@api_view(['GET'])
-def pendingtransfers_api_view(request,pk):
-    try: 
-        item = PendingTransfer.objects.get(id = pk)
-    except History.DoesNotExist:
-        raise Http404('Not found')
- 
-    if request.method == 'GET':
-        serializer = PendingTransferSerializer(item)
-        return JsonResponse(serializer.data)
-
-class ChangePasswordView(generics.UpdateAPIView):
-    """
-    An endpoint for changing password.
-    """
-    serializer_class = ChangePasswordSerializer
-    model = User
-    permission_classes = (IsAuthenticated,)
-
-    def get_object(self, queryset=None):
-        obj = self.request.user
-        return obj
-
-    def update(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        serializer = self.get_serializer(data=request.data)
-
-        if serializer.is_valid():
-            # Check old password
-            if not self.object.check_password(serializer.data.get("old_password")):
-                return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
-            # set_password also hashes the password that the user will get
-            self.object.set_password(serializer.data.get("new_password"))
-            self.object.save()
-            response = {
-                'status': 'success',
-                'code': status.HTTP_200_OK,
-                'message': 'Password updated successfully',
-                'data': []
-            }
-
-            return Response(response)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@login_required
 @api_view(['GET','POST'])
-def UserDataLists_api_view(request):
+@permission_classes([IsAuthenticated])
+def histories_api_view(request):
     
     if request.method == 'GET':
-        items = UpdateUser.objects.all()
-        serializer = UpdateUserSerializer(items, many =True)
+        items = History.objects.filter(owner=request.user,)
+        serializer = HistorySerializer(items, many=True)
         return JsonResponse(serializer.data, safe =False)
     
     elif request.method == 'POST':
+        owner = request.user
+        data = JSONParser().parse(request)
+        serializer =HistorySerializer(data = data)
+ 
+        if serializer.is_valid():
+            serializer.save(owner)
+            return JsonResponse(serializer.data,status =201)
+        return JsonResponse(serializer.errors,status = 400)
+ 
 
+# class ChangePasswordView(generics.UpdateAPIView):
+#     """
+#     An endpoint for changing password.
+#     """
+#     serializer_class = ChangePasswordSerializer
+#     model = User
+#     permission_classes = (IsAuthenticated,)
+
+#     def get_object(self, queryset=None):
+#         obj = self.request.user
+#         return obj
+
+#     def update(self, request, *args, **kwargs):
+#         self.object = self.get_object()
+#         serializer = self.get_serializer(data=request.data)
+
+#         if serializer.is_valid():
+#             # Check old password
+#             if not self.object.check_password(serializer.data.get("old_password")):
+#                 return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+#             # set_password also hashes the password that the user will get
+#             self.object.set_password(serializer.data.get("new_password"))
+#             self.object.save()
+#             response = {
+#                 'status': 'success',
+#                 'code': status.HTTP_200_OK,
+#                 'message': 'Password updated successfully',
+#                 'data': []
+#             }
+
+#             return Response(response)
+
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET','POST'])
+@permission_classes([IsAuthenticated])
+def profile_api_view(request):
+    
+    if request.method == 'GET':
+        items = UpdateUser.objects.filter(owner=request.user,)
+        serializer = UpdateUserSerializer(items, many=True)
+        return JsonResponse(serializer.data, safe =False)
+    
+    elif request.method == 'POST':
+        owner = request.user
         data = JSONParser().parse(request)
         serializer =UpdateUserSerializer(data = data)
  
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(owner)
             return JsonResponse(serializer.data,status =201)
         return JsonResponse(serializer.errors,status = 400)
-
-@login_required
-@api_view(['GET'])
-def UserDataList_api_view(request,pk):
-    try: 
-        item = UpdateUser.objects.get(id = pk)
-    except History.DoesNotExist:
-        raise Http404('Not found')
- 
-    if request.method == 'GET':
-        serializer = UpdateUserSerializer(item)
-        return JsonResponse(serializer.data)
 
 # class RequestPasswordResetEmail(generics.GenericAPIView):
 #     serializer_class = RequestPasswordResetEmailSerializer

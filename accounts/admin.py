@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import User, History, PendingTransfer
+from .models import User, History
 
 from .models import UpdateUser
 
@@ -39,25 +39,18 @@ class UserAdmin(BaseUserAdmin):
 admin.site.register(User, UserAdmin)
 
 class UpdateUserAdmin(admin.ModelAdmin):
-  list_display = ('id', 'user_id', 'date_updated')
-  list_display_links = ('id', 'user_id')
-  search_fields = ('user_id',)
+  list_display = ('id', 'owner', 'date_updated')
+  list_display_links = ('id', 'owner')
+  search_fields = ('owner',)
   list_per_page = 25
 
 admin.site.register(UpdateUser, UpdateUserAdmin)
 
 class HistoryAdmin(admin.ModelAdmin):
-  list_display = ('id', 'bank_name', 'customer_name', 'transaction_type', 'transaction_amount', 'transaction_id', 'transaction_date', 'user_id')
-  list_display_links = ('id', 'user_id')
-  search_fields = ('user_id',)
+
+  list_display = ('id', 'to_account', 'transaction_type', 'transaction_amount', 'transaction_description', 'transaction_id', 'transaction_date', 'status', 'owner')
+  list_display_links = ('id', 'owner')
+  search_fields = ('owner',)
   list_per_page = 25
 
 admin.site.register(History, HistoryAdmin)
-
-class PendingTransferAdmin(admin.ModelAdmin):
-  list_display = ('id', 'customer_name', 'transfer_amount', 'transfer_date', 'user_id')
-  list_display_links = ('id', 'user_id')
-  search_fields = ('user_id',)
-  list_per_page = 25
-
-admin.site.register(PendingTransfer, PendingTransferAdmin)

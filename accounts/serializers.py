@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from accounts.models import User, History, PendingTransfer
+from accounts.models import User, History
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import authenticate
@@ -11,6 +11,7 @@ from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnico
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
+from rest_framework.fields import CurrentUserDefault
 
 # Register Serializer
 class RegisterSerializer(serializers.ModelSerializer):
@@ -72,15 +73,26 @@ class UserSerializer(serializers.ModelSerializer):
 
 # History Serializaer
 class HistorySerializer(serializers.ModelSerializer):
+    owner = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())
     class Meta:
         model = History
         fields = '__all__'
 
-# PendingTransfer Serializaer
-class PendingTransferSerializer(serializers.ModelSerializer):
+    def save(self, **kwargs):
+        """Include default for read_only `account` field"""
+        kwargs["owner"] = self.fields["owner"].get_default()
+        return super().save(**kwargs)
+
+class UpdateUserSerializer(serializers.ModelSerializer):
+    owner = serializers.PrimaryKeyRelatedField(read_only=True, default=serializers.CurrentUserDefault())  
     class Meta:
-        model = PendingTransfer
+        model = UpdateUser
         fields = '__all__'
+
+    def save(self, **kwargs):
+        """Include default for read_only `account` field"""
+        kwargs["owner"] = self.fields["owner"].get_default()
+        return super().save(**kwargs)
 
 class ChangePasswordSerializer(serializers.Serializer):
     model = User
