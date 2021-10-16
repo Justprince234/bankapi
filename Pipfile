@@ -15,6 +15,7 @@ cryptography = "*"
 boto3 = "*"
 django-rest-knox = "*"
 gunicorn = "*"
+django-cloudinary-storage = "*"
 
 [dev-packages]
 

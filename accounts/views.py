@@ -173,7 +173,7 @@ def profile_api_view(request):
     
     elif request.method == 'POST':
         owner = request.user
-        data = JSONParser().parse(request)
+        data = JSONParser().parse(request.data)
         serializer =UpdateUserSerializer(data = data)
  
         if serializer.is_valid():

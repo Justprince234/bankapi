@@ -10,6 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import cloudinary
+import cloudinary_storage
+
 from pathlib import Path
 import os
 
@@ -44,6 +47,10 @@ INSTALLED_APPS = [
     'knox',
     'corsheaders',
     'drf_yasg',
+
+    # Media Cloudinary
+    'cloudinary',
+    'cloudinary_storage',
 
     #My Apps
     'accounts.apps.AccountsConfig',
@@ -149,6 +156,15 @@ STATICFILES_DIRS = [
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'photos/')
 MEDIA_URL = '/photos/photos/'
+
+# Cloudinary stuff
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': "dzksjq5ax",
+    'API_KEY': "671711129678448",
+    'API_SECRET': "mhC_pLReMZkURhGbgoWhuCvvqgQ",
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

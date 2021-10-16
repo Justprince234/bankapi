@@ -99,8 +99,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 class UpdateUser(models.Model):
     """Update user credentials"""
     dob = models.DateField()
-    valid_ID_frontview = models.ImageField(upload_to='photos/%Y/%m/%d/')
-    valid_ID_backview = models.ImageField(upload_to='photos/%Y/%m/%d/')
     next_of_kin = models.CharField(max_length=100)
     relationship_nok = models.CharField(max_length=50)
     phone_nok = models.CharField(max_length=50)
